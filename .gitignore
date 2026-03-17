@@ -183,3 +183,5 @@ cython_debug/
 # User ignore file (uncomment and customize as needed)
 /datasets
 SUPERCONDataset/MDR SuperCon Datasheet Ver.240322
+SUPERCONDataset/archive
+SUPERCONDataset/archive.zip

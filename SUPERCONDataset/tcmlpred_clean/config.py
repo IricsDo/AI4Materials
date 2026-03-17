@@ -1,0 +1,8 @@
+BATCH_SIZE = 64
+LR = 1e-4
+EPOCHS = 200
+
+TEST_SIZE = 0.2
+RANDOM_STATE = 42
+
+MODEL_PATH = "model.pt"
