@@ -1,5 +1,6 @@
 import pandas as pd
 import torch
+import numpy as np
 from torch.utils.data import Dataset
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -29,17 +30,21 @@ def load_data(csv_path, test_size, random_state):
 
     df = pd.read_csv(csv_path)
 
-    y_reg = df["tc"].values
-    y_cls = (y_reg > 0).astype(int)
+    y_reg_raw = df["Tc"].to_numpy(dtype=float)
+    y_cls = (y_reg_raw > 0).astype(int)
+    
+    y_std = float(np.std(y_reg_raw))
+    scaler_y = StandardScaler()
+    y_reg_scaled = scaler_y.fit_transform(y_reg_raw.reshape(-1, 1)).flatten()
+    
 
-    X = df.drop(columns=["tc"]).values
-
+    X = df.drop(columns=["Tc","formula","composition","category"])
     scaler = StandardScaler()
     X = scaler.fit_transform(X)
 
     X_train, X_test, y_reg_train, y_reg_test, y_cls_train, y_cls_test = train_test_split(
         X,
-        y_reg,
+        y_reg_scaled,
         y_cls,
         test_size=test_size,
         random_state=random_state
@@ -57,4 +62,4 @@ def load_data(csv_path, test_size, random_state):
         y_cls_test
     )
 
-    return train_ds, test_ds, X.shape[1]
+    return train_ds, test_ds, X.shape[1], y_std
