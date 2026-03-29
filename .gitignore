@@ -182,8 +182,10 @@ cython_debug/
 
 # User ignore file (uncomment and customize as needed)
 /datasets
-SUPERCONDataset/MDR SuperCon Datasheet Ver.240322
-SUPERCONDataset/archive/*.png
-SUPERCONDataset/archive.zip
 /Papers
-SUPERCONDataset/tcmlpred_clean/model.pt
+SUPERCONDataset/MDR SuperCon Datasheet Ver.240322
+*.png
+*.zip
+*.pt
+*.csv
+*.hdf5
