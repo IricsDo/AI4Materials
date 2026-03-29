@@ -185,3 +185,4 @@ cython_debug/
 SUPERCONDataset/MDR SuperCon Datasheet Ver.240322
 SUPERCONDataset/archive/*.png
 SUPERCONDataset/archive.zip
+/Papers
