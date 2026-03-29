@@ -1,52 +1,116 @@
-import torch.nn as nn
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
+# class TcMLPred(nn.Module):
+#     def __init__(self, input_dim):
+#         super().__init__()
+
+#         # Mạng dùng chung (Shared layers)
+#         self.shared = nn.Sequential(
+#             nn.Linear(input_dim, 128),
+#             nn.BatchNorm1d(128),      # Bổ sung BatchNorm
+#             nn.ReLU(),
+#             nn.Dropout(0.2),          # Bổ sung Dropout (tắt ngẫu nhiên 20% neuron)
+
+#             nn.Linear(128, 64),
+#             nn.BatchNorm1d(64),       # Bổ sung BatchNorm
+#             nn.ReLU(),
+#             nn.Dropout(0.2)
+#         )
+
+#         # Nhánh Hồi quy (Regression Head) - Dự đoán giá trị Tc
+#         self.reg_head = nn.Sequential(
+#             nn.Linear(64, 64),
+#             nn.BatchNorm1d(64),       # Bổ sung BatchNorm
+#             nn.ReLU(),
+#             nn.Dropout(0.2),
+#             nn.Linear(64, 1)
+#         )
+
+#         # Nhánh Phân loại (Classification Head) - Dự đoán có phải siêu dẫn không
+#         self.cls_head = nn.Sequential(
+#             nn.Linear(64, 32),
+#             nn.BatchNorm1d(32),       # Bổ sung BatchNorm
+#             nn.ReLU(),
+#             nn.Dropout(0.2),
+#             nn.Linear(32, 2)
+#         )
+        
+#         self.log_var_reg = nn.Parameter(torch.zeros(1))
+#         self.log_var_cls = nn.Parameter(torch.zeros(1))
+        
+#     def forward(self, x):
+#         h = self.shared(x)
+
+#         tc_pred = self.reg_head(h)
+#         cls_pred = self.cls_head(h)
+
+#         return tc_pred, cls_pred
+    
 class TcMLPred(nn.Module):
     def __init__(self, input_dim):
+        
         super().__init__()
+        
 
-        # Mạng dùng chung (Shared layers)
-        self.shared = nn.Sequential(
-            nn.Linear(input_dim, 128),
-            nn.BatchNorm1d(128),      # Bổ sung BatchNorm
-            nn.ReLU(),
-            nn.Dropout(0.2),          # Bổ sung Dropout (tắt ngẫu nhiên 20% neuron)
+        self.fc1 = nn.Linear(input_dim, 256)
+        self.bn1 = nn.BatchNorm1d(256)
 
-            nn.Linear(128, 64),
-            nn.BatchNorm1d(64),       # Bổ sung BatchNorm
-            nn.ReLU(),
-            nn.Dropout(0.2)
-        )
+        self.fc2 = nn.Linear(256, 256)
+        self.bn2 = nn.BatchNorm1d(256)
 
-        # Nhánh Hồi quy (Regression Head) - Dự đoán giá trị Tc
+        self.fc3 = nn.Linear(256, 128)
+        self.bn3 = nn.BatchNorm1d(128)
+
+        self.relu = nn.ReLU()
+        self.dropout = nn.Dropout(0.3)
+
+        # regression head
         self.reg_head = nn.Sequential(
-            nn.Linear(64, 64),
-            nn.BatchNorm1d(64),       # Bổ sung BatchNorm
+            nn.Linear(128, 64),
             nn.ReLU(),
-            nn.Dropout(0.2),
-            nn.Linear(64, 1)
+            nn.Linear(64,1)
         )
 
-        # Nhánh Phân loại (Classification Head) - Dự đoán có phải siêu dẫn không
+        # classification head
         self.cls_head = nn.Sequential(
-            nn.Linear(64, 32),
-            nn.BatchNorm1d(32),       # Bổ sung BatchNorm
+            nn.Linear(128,64),
             nn.ReLU(),
-            nn.Dropout(0.2),
-            nn.Linear(32, 2)
+            nn.Linear(64,2)
         )
         
+        # learnable uncertainty weights
         self.log_var_reg = nn.Parameter(torch.zeros(1))
         self.log_var_cls = nn.Parameter(torch.zeros(1))
         
-    def forward(self, x):
-        h = self.shared(x)
+    def forward(self,x):
+
+        h = self.relu(self.bn1(self.fc1(x)))
+
+        res = h
+        h = self.relu(self.bn2(self.fc2(h)))
+        h = h + res              # residual connection
+
+        h = self.dropout(self.relu(self.bn3(self.fc3(h))))
 
         tc_pred = self.reg_head(h)
         cls_pred = self.cls_head(h)
 
         return tc_pred, cls_pred
     
+    def multitask_loss(self, tc_pred, cls_pred, tc_true, cls_true):
+
+        tc_true = tc_true.unsqueeze(1)   # match shape [B,1]
+
+        reg_loss = F.mse_loss(tc_pred, tc_true)
+        cls_loss = F.cross_entropy(cls_pred, cls_true)
+
+        loss = torch.exp(-self.log_var_reg)*reg_loss + self.log_var_reg \
+            + torch.exp(-self.log_var_cls)*cls_loss + self.log_var_cls
+
+        return loss
+
 import torch
 import numpy as np
 
