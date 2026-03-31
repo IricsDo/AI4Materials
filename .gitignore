@@ -189,3 +189,5 @@ SUPERCONDataset/MDR SuperCon Datasheet Ver.240322
 *.pt
 *.csv
 *.hdf5
+*.cif
+*.tar.gz
