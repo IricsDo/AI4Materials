@@ -1,0 +1,12 @@
+# General requirements (updated for Python 3.12+ compatibility)
+numpy>=1.26.0
+tqdm>=4.66.0,<5
+scipy>=1.14.0
+BoltzTraP2>=25.11.1
+pymatgen>=2025.10.0
+
+# CUDA / PyTorch requirements (latest stable with CUDA support)
+torch>=2.5.0
+# torchvision and torchaudio are often useful with torch, but optional:
+# torchvision>=0.20.0
+# torchaudio>=2.5.0
